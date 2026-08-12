@@ -1,0 +1,98 @@
+openapi: 3.1.0
+
+info:
+  title: Project API
+  version: 0.1.0
+  description: |
+    This file is the source of truth for the API.
+    When you add or change an endpoint, update this file too.
+
+    FastAPI (`services/api-python`) serves its documentation at `/docs`
+    automatically — in that case replace this file with the generated schema.
+
+servers:
+  - url: http://localhost:3000/api/v1
+    description: Local development
+  - url: https://staging.example.com/api/v1
+    description: Staging
+  - url: https://api.example.com/api/v1
+    description: Production
+
+tags:
+  - name: system
+    description: Health and service metadata
+
+paths:
+  /health:
+    get:
+      tags: [system]
+      summary: Service health
+      description: Called by load balancers and monitoring. Requires no authentication.
+      security: []
+      responses:
+        "200":
+          description: The service is healthy
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Health"
+        "503":
+          description: The service is not ready (for example the database is unreachable)
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+
+  schemas:
+    Health:
+      type: object
+      required: [status, version]
+      properties:
+        status:
+          type: string
+          enum: [ok, degraded]
+        version:
+          type: string
+          example: "0.1.0"
+        uptime_seconds:
+          type: integer
+          minimum: 0
+          example: 3600
+
+    Error:
+      description: Every error response uses this shape.
+      type: object
+      required: [error]
+      properties:
+        error:
+          type: object
+          required: [code, message]
+          properties:
+            code:
+              type: string
+              description: Machine-readable error code.
+              example: VALIDATION_FAILED
+            message:
+              type: string
+              description: Human-readable description.
+              example: "phone is not a valid number"
+            details:
+              type: array
+              description: Field-level errors.
+              items:
+                type: object
+                properties:
+                  field:
+                    type: string
+                  issue:
+                    type: string
+
+security:
+  - bearerAuth: []
